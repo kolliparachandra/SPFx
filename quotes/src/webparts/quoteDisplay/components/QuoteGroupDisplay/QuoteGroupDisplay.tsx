@@ -23,6 +23,7 @@ export default class QuoteDisplay extends React.Component<IQuoteGroupDisplayProp
 
       return (
         <div className={styles.quotes}>
+          // TODO: Refactor to use QuoteDisplay component
           {this.quotes.map(q =>(
             <div className="ms-font-xxl">
               <div className={styles.line}>{q.Title}</div>

@@ -10,6 +10,7 @@ export default class SPQuotationService {
 
         var url = context.pageContext.web.absoluteUrl + "/_api/lists/GetByTitle('" + listName + "')/items";
         
+        // TODO: Select only the fields I need
         return context.spHttpClient.get(url, SPHttpClient.configurations.v1)
             .then ((response: SPHttpClientResponse) => {
                 return response.json();
