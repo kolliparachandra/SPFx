@@ -2,8 +2,7 @@ import * as React from 'react';
 import * as ReactDom from 'react-dom';
 import { 
   Version,
-  Environment,
-  EnvironmentType
+  Environment
 } from '@microsoft/sp-core-library';
 import {
   BaseClientSideWebPart,
@@ -15,12 +14,14 @@ import {
 import * as strings from 'quoteDisplayStrings';
 import QuoteGroupDisplay from './components/QuoteGroupDisplay/QuoteGroupDisplay';
 import { IQuoteGroupDisplayProps } from './components/QuoteGroupDisplay/IQuoteGroupDisplayProps';
+import ExceptionDisplay from './components/ExceptionDisplay/ExceptionDisplay';
+import { IExceptionDisplayProps } from './components/ExceptionDisplay/IExceptionDisplayProps';
 
 import { IQuoteDisplayWebPartProps } from './IQuoteDisplayWebPartProps';
 
-import { IQuotation } from './model/IQuotation';
-import MockQuotationService from './model/MockQuotationService';
-import SPQuotationService from './model/SPQuotationService';
+import { QuotationServiceFactory } from './model/QuotationService/QuotationServiceFactory';
+import { IQuotation } from './model/QuotationService/IQuotation';
+import { IException } from './model/IException';
 
 export default class QuoteDisplayWebPart extends BaseClientSideWebPart<IQuoteDisplayWebPartProps> {
 
@@ -30,9 +31,12 @@ export default class QuoteDisplayWebPart extends BaseClientSideWebPart<IQuoteDis
   
   public render(): void { 
 
-    this.getQuotation().then ((quotations: IQuotation[]) => {
+    var service = QuotationServiceFactory.getService(Environment.type);
 
-      const element: React.ReactElement<IQuoteGroupDisplayProps > = React.createElement(
+    service.get(this.context, this.properties.spListName)
+    .then ((quotations: IQuotation[]) => {
+
+      const element: React.ReactElement<IQuoteGroupDisplayProps> = React.createElement(
         QuoteGroupDisplay, {
            quotes: quotations,
            quoteCount: this.properties.quoteCount,
@@ -41,22 +45,20 @@ export default class QuoteDisplayWebPart extends BaseClientSideWebPart<IQuoteDis
       );
 
       ReactDom.render(element, this.domElement);
+    })
+    .catch ((exception: IException) => {
+
+      const element: React.ReactElement<IExceptionDisplayProps > = React.createElement(
+        ExceptionDisplay, {
+          message: exception.message,
+          statusCode: exception.status,
+          statusText: exception.statusText,
+          onEditWebPart: () => { this.context.propertyPane.open(); }
+        }
+      );
+
+      ReactDom.render(element, this.domElement);
     });
-  }
-
-  private getQuotation() : Promise<IQuotation[]> {
-
-    if (Environment.type === EnvironmentType.Local) {
-      return MockQuotationService.get()
-        .then((data : IQuotation[]) => {
-          return data;
-        }) as Promise<IQuotation[]>;
-    } else {
-      return SPQuotationService.get(this.context, this.properties.spListName)
-        .then((data : IQuotation[]) => {
-          return data;
-        }) as Promise<IQuotation[]>;
-    }
   }
 
   protected get dataVersion(): Version {
